@@ -6,6 +6,7 @@
 """
 
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from .models import (
     Beneficiary,
@@ -98,10 +99,12 @@ class RaceSerializer(serializers.ModelSerializer):
             "beneficiaries",
         ]
 
+    @extend_schema_field(PartnerShortSerializer(many=True))
     def get_partners(self, obj):
         qs = obj.partners.filter(is_visible=True)
         return PartnerShortSerializer(qs, many=True, context=self.context).data
 
+    @extend_schema_field(BeneficiaryShortSerializer(many=True))
     def get_beneficiaries(self, obj):
         qs = obj.beneficiaries.filter(is_visible=True)
         return BeneficiaryShortSerializer(qs, many=True, context=self.context).data
@@ -157,6 +160,7 @@ class GallerySerializer(serializers.ModelSerializer):
         model = Gallery
         fields = ["id", "title", "description", "date", "race", "images"]
 
+    @extend_schema_field(GalleryRaceSerializer)
     def get_race(self, obj):
         if obj.race and obj.race.is_visible:
             return GalleryRaceSerializer(obj.race, context=self.context).data

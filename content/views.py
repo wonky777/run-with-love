@@ -11,6 +11,7 @@ from rest_framework import viewsets
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema
 
 from .models import (
     Beneficiary,
@@ -107,6 +108,9 @@ class AchievementViewSet(viewsets.ReadOnlyModelViewSet):
 class OrganizationInfoView(APIView):
     """GET /api/organization/ — информация об организации (для AboutUs)."""
 
+    serializer_class = OrganizationInfoSerializer
+
+    @extend_schema(responses=OrganizationInfoSerializer)
     def get(self, request):
         info = OrganizationInfo.load()
         serializer = OrganizationInfoSerializer(info, context={"request": request})

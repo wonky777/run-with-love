@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "adminsortable2",      # drag-and-drop сортировка
     "django_ckeditor_5",   # редактор текста
+    "drf_spectacular",     # OpenAPI/Swagger документация
     # Наше приложение
     "content",
 ]
@@ -130,6 +131,7 @@ STORAGES = {
 
 # --- Django REST Framework: публичное read-only API без авторизации ---
 REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
     ],
@@ -201,4 +203,13 @@ CKEDITOR_5_CONFIGS = {
             "undo", "redo",
         ],
     },
+}
+
+
+# --- Документация API (drf-spectacular) ---
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Run With Love API",
+    "DESCRIPTION": "Публичное read-only API сайта благотворительных забегов.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
