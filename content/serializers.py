@@ -244,3 +244,26 @@ class AchievementWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Achievement
         exclude = ["created_at", "updated_at"]
+
+
+# === Дочерние сущности отдельными endpoint'ами (CRUD) ===
+class RaceDistanceCRUDSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RaceDistance
+        fields = ["id", "race", "length", "age_category", "sort_order"]
+
+
+class NewsImageCRUDSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
+
+    class Meta:
+        model = NewsImage
+        fields = ["id", "news", "image", "sort_order"]
+
+
+class GalleryImageCRUDSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
+
+    class Meta:
+        model = GalleryImage
+        fields = ["id", "gallery", "image", "sort_order"]

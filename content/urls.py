@@ -14,6 +14,9 @@ from .views import (
     RaceViewSet,
     TeamMemberViewSet,
     AchievementViewSet,
+    RaceDistanceViewSet,
+    NewsImageViewSet,
+    GalleryImageViewSet,
 )
 
 router = DefaultRouter()
@@ -24,6 +27,9 @@ router.register("beneficiaries", BeneficiaryViewSet, basename="beneficiary")
 router.register("galleries", GalleryViewSet, basename="gallery")
 router.register("team", TeamMemberViewSet, basename="team")
 router.register("achievements", AchievementViewSet, basename="achievement")
+router.register("distances", RaceDistanceViewSet, basename="distance")
+router.register("news-images", NewsImageViewSet, basename="newsimage")
+router.register("gallery-images", GalleryImageViewSet, basename="galleryimage")
 
 urlpatterns = [
     path("schema/", SpectacularAPIView.as_view(), name="schema"),

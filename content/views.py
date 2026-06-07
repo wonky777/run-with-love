@@ -22,6 +22,9 @@ from .models import (
     OrganizationInfo,
     TeamMember,
     Achievement,
+    RaceDistance,
+    NewsImage,
+    GalleryImage,
 )
 from .serializers import (
     BeneficiarySerializer,
@@ -39,6 +42,9 @@ from .serializers import (
     GalleryWriteSerializer,
     TeamMemberWriteSerializer,
     AchievementWriteSerializer,
+    RaceDistanceCRUDSerializer,
+    NewsImageCRUDSerializer,
+    GalleryImageCRUDSerializer,
 )
 
 
@@ -148,6 +154,39 @@ class AchievementViewSet(VisibilityMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self._visible(Achievement.objects.all())
+
+
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class RaceDistanceViewSet(viewsets.ModelViewSet):
+    """Дистанции забегов. GET — публично; запись — по токену."""
+
+    serializer_class = RaceDistanceCRUDSerializer
+    queryset = RaceDistance.objects.all().select_related("race")
+
+
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class NewsImageViewSet(viewsets.ModelViewSet):
+    """Изображения новостей. GET — публично; запись — по токену."""
+
+    serializer_class = NewsImageCRUDSerializer
+    queryset = NewsImage.objects.all().select_related("news")
+
+
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class GalleryImageViewSet(viewsets.ModelViewSet):
+    """Изображения фотоальбомов. GET — публично; запись — по токену."""
+
+    serializer_class = GalleryImageCRUDSerializer
+    queryset = GalleryImage.objects.all().select_related("gallery")
 
 
 class OrganizationInfoView(APIView):
