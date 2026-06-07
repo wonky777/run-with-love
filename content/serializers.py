@@ -198,3 +198,49 @@ class AchievementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Achievement
         fields = ["id", "value", "label"]
+
+
+# === Сериализаторы для записи (POST/PUT/PATCH) ===
+# Используются только для создания/изменения через токен. Чтение отдают
+# сериализаторы выше (с вложенными объектами и абсолютными URL картинок).
+
+class RaceWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Race
+        exclude = ["created_at", "updated_at"]
+
+
+class NewsWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = News
+        exclude = ["created_at", "updated_at"]
+
+
+class PartnerWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Partner
+        exclude = ["created_at", "updated_at"]
+
+
+class BeneficiaryWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Beneficiary
+        exclude = ["created_at", "updated_at"]
+
+
+class GalleryWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gallery
+        exclude = ["created_at", "updated_at"]
+
+
+class TeamMemberWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeamMember
+        exclude = ["created_at", "updated_at"]
+
+
+class AchievementWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Achievement
+        exclude = ["created_at", "updated_at"]

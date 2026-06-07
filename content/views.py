@@ -1,17 +1,17 @@
 """
-Публичное read-only API (раздел 9 ТЗ).
+API (раздел 9 ТЗ + CRUD).
 
-Все endpoints:
-- доступны без авторизации (GET);
-- отдают только записи с is_visible=True;
-- возвращают абсолютные URL изображений.
+- GET (список/деталь) — публично, без авторизации; видны только is_visible=True.
+- POST/PUT/PATCH/DELETE — только по токену (IsAuthenticatedOrReadOnly).
+  Авторизованному пользователю видны все записи (включая скрытые).
+- Чтение отдают «read»-сериализаторы (вложенные объекты, абсолютные URL картинок),
+  запись принимают «write»-сериализаторы.
 """
 
 from rest_framework import viewsets
-from rest_framework.generics import RetrieveAPIView
-from rest_framework.response import Response
 from rest_framework.views import APIView
-from drf_spectacular.utils import extend_schema
+from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from .models import (
     Beneficiary,
@@ -32,77 +32,122 @@ from .serializers import (
     OrganizationInfoSerializer,
     TeamMemberSerializer,
     AchievementSerializer,
+    RaceWriteSerializer,
+    NewsWriteSerializer,
+    PartnerWriteSerializer,
+    BeneficiaryWriteSerializer,
+    GalleryWriteSerializer,
+    TeamMemberWriteSerializer,
+    AchievementWriteSerializer,
 )
 
 
-class RaceViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/races/ — список забегов с дистанциями, партнёрами, благополучателями."""
+class VisibilityMixin:
+    """Публике — только is_visible=True; авторизованному — все записи."""
 
-    serializer_class = RaceSerializer
+    read_serializer = None
+    write_serializer = None
+
+    def get_serializer_class(self):
+        if self.action in ("create", "update", "partial_update"):
+            return self.write_serializer
+        return self.read_serializer
+
+    def _visible(self, qs):
+        user = getattr(self.request, "user", None)
+        if user and user.is_authenticated:
+            return qs
+        return qs.filter(is_visible=True)
+
+
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class RaceViewSet(VisibilityMixin, viewsets.ModelViewSet):
+    """Забеги. GET — публично; запись — по токену."""
+
+    read_serializer = RaceSerializer
+    write_serializer = RaceWriteSerializer
 
     def get_queryset(self):
-        return (
-            Race.objects.filter(is_visible=True)
-            .prefetch_related("distances", "partners", "beneficiaries")
+        return self._visible(
+            Race.objects.all().prefetch_related("distances", "partners", "beneficiaries")
         )
 
 
-class NewsViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/news/ — список новостей с галереей изображений."""
-
-    serializer_class = NewsSerializer
-
-    def get_queryset(self):
-        return News.objects.filter(is_visible=True).prefetch_related("images")
-
-
-class PartnerViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/partners/ — список партнёров."""
-
-    serializer_class = PartnerSerializer
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class NewsViewSet(VisibilityMixin, viewsets.ModelViewSet):
+    read_serializer = NewsSerializer
+    write_serializer = NewsWriteSerializer
 
     def get_queryset(self):
-        return Partner.objects.filter(is_visible=True)
+        return self._visible(News.objects.all().prefetch_related("images"))
 
 
-class BeneficiaryViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/beneficiaries/ — список благополучателей."""
-
-    serializer_class = BeneficiarySerializer
-
-    def get_queryset(self):
-        return Beneficiary.objects.filter(is_visible=True)
-
-
-class GalleryViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/galleries/ — список фотоальбомов с изображениями."""
-
-    serializer_class = GallerySerializer
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class PartnerViewSet(VisibilityMixin, viewsets.ModelViewSet):
+    read_serializer = PartnerSerializer
+    write_serializer = PartnerWriteSerializer
 
     def get_queryset(self):
-        return (
-            Gallery.objects.filter(is_visible=True)
-            .select_related("race")
-            .prefetch_related("images")
+        return self._visible(Partner.objects.all())
+
+
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class BeneficiaryViewSet(VisibilityMixin, viewsets.ModelViewSet):
+    read_serializer = BeneficiarySerializer
+    write_serializer = BeneficiaryWriteSerializer
+
+    def get_queryset(self):
+        return self._visible(Beneficiary.objects.all())
+
+
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class GalleryViewSet(VisibilityMixin, viewsets.ModelViewSet):
+    read_serializer = GallerySerializer
+    write_serializer = GalleryWriteSerializer
+
+    def get_queryset(self):
+        return self._visible(
+            Gallery.objects.all().select_related("race").prefetch_related("images")
         )
 
 
-class TeamMemberViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/team/ — команда проекта."""
-
-    serializer_class = TeamMemberSerializer
-
-    def get_queryset(self):
-        return TeamMember.objects.filter(is_visible=True)
-
-
-class AchievementViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/achievements/ — показатели для блока «Наше влияние»."""
-
-    serializer_class = AchievementSerializer
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class TeamMemberViewSet(VisibilityMixin, viewsets.ModelViewSet):
+    read_serializer = TeamMemberSerializer
+    write_serializer = TeamMemberWriteSerializer
 
     def get_queryset(self):
-        return Achievement.objects.filter(is_visible=True)
+        return self._visible(TeamMember.objects.all())
+
+
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class AchievementViewSet(VisibilityMixin, viewsets.ModelViewSet):
+    read_serializer = AchievementSerializer
+    write_serializer = AchievementWriteSerializer
+
+    def get_queryset(self):
+        return self._visible(Achievement.objects.all())
 
 
 class OrganizationInfoView(APIView):
