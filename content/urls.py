@@ -2,6 +2,7 @@
 
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+from rest_framework.authtoken.views import obtain_auth_token
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 from .views import (
@@ -29,5 +30,6 @@ urlpatterns = [
     path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     path("organization/", OrganizationInfoView.as_view(), name="organization"),
+    path("token/", obtain_auth_token, name="api_token"),
     path("", include(router.urls)),
 ]
