@@ -1,0 +1,7 @@
+# Конфигурация mise для сборки на Railway/Nixpacks.
+# Отключаем проверку GitHub-attestations — иначе mise не ставит python.
+[tools]
+python = "3.12"
+
+[settings]
+python.github_attestations = false
