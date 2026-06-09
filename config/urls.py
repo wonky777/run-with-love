@@ -39,7 +39,18 @@ urlpatterns = [
 ]
 
 # Медиа-файлы (загруженные через админку).
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# ВАЖНО: helper static() работает только при DEBUG=True, поэтому в продакшене
+# (DEBUG=False) загруженные фото не отдавались бы и показывались «битыми».
+# Отдаём media через явный маршрут всегда — это корректно для небольшого
+# контент-сайта на одном сервере (раздел 11 ТЗ).
+media_url = settings.MEDIA_URL.lstrip("/")
+urlpatterns += [
+    re_path(
+        rf"^{media_url}(?P<path>.*)$",
+        serve,
+        {"document_root": settings.MEDIA_ROOT},
+    ),
+]
 
 # Собранный фронт на остальных путях (catch-all — обязательно последним).
 urlpatterns += [re_path(r"^(?P<path>.*)$", spa_serve)]

@@ -160,6 +160,13 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 MAX_IMAGE_SIZE_MB = int(os.getenv("MAX_IMAGE_SIZE_MB", "10"))
 ALLOWED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "gif"]
 
+# --- Автоимпорт новостей из ВКонтакте (раздел 19.1 ТЗ, желательное) ---
+# Токен доступа VK API (сервисный ключ сообщества или пользователя).
+# Без токена автоимпорт не работает, ручное создание новостей — работает всегда.
+VK_ACCESS_TOKEN = os.getenv("VK_ACCESS_TOKEN", "")
+# Короткое имя сообщества: vk.com/<domain>.
+VK_GROUP_DOMAIN = os.getenv("VK_GROUP_DOMAIN", "runwithlove")
+
 # --- Собранный фронт (режим «всё в одном»): Django отдаёт React-сайт ---
 # Папка с результатом `npm run build` (vite). Если её нет — работает только API/админка.
 FRONTEND_DIST = BASE_DIR / "static_site"
@@ -174,7 +181,34 @@ JAZZMIN_SETTINGS = {
     "copyright": "Run With Love",
     "search_model": ["content.Race", "content.News"],
     "show_ui_builder": False,
+    # Подсказка-приветствие в боковом меню для не-технического администратора.
+    "site_logo_classes": "img-circle",
+    # Понятный порядок разделов: сначала контент сайта, технические — в конце.
+    "order_with_respect_to": [
+        "content",
+        "content.Race",
+        "content.RaceDistance",
+        "content.News",
+        "content.Gallery",
+        "content.Partner",
+        "content.Beneficiary",
+        "content.Report",
+        "content.TeamMember",
+        "content.Achievement",
+        "content.OrganizationInfo",
+        "auth",
+    ],
+    # Скрываем технические модели, которые администратору-контентщику не нужны:
+    # отдельные «Изображения» (они редактируются прямо внутри новости/альбома)
+    # и токены DRF.
+    "hide_models": [
+        "content.NewsImage",
+        "content.GalleryImage",
+        "content.RaceDistance",
+        "authtoken.TokenProxy",
+    ],
     "icons": {
+        "auth": "fas fa-lock",
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
         "content.Race": "fas fa-person-running",
@@ -187,6 +221,7 @@ JAZZMIN_SETTINGS = {
         "content.GalleryImage": "fas fa-image",
         "content.TeamMember": "fas fa-people-group",
         "content.Achievement": "fas fa-trophy",
+        "content.Report": "fas fa-file-lines",
         "content.OrganizationInfo": "fas fa-circle-info",
     },
 }

@@ -421,9 +421,87 @@ class Achievement(models.Model):
         return f"{self.value} — {self.label}"
 
 
+class Report(models.Model):
+    """
+    Отчёт проекта (например, «Как использованы собранные средства»).
+    Это публичная информационная сущность — без реквизитов и платёжных данных
+    (раздел 12 ТЗ). Можно приложить файл (PDF) и/или указать внешнюю ссылку.
+    """
+
+    title = models.CharField("Заголовок", max_length=255)
+    slug = models.SlugField("Slug (ЧПУ)", max_length=255, unique=True, blank=True)
+    description = models.TextField("Описание", blank=True)
+    date = models.DateField("Дата отчёта", null=True, blank=True)
+    document = models.FileField(
+        "Файл отчёта (PDF и т.п.)",
+        upload_to="reports/",
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=["pdf", "doc", "docx", "xls", "xlsx", "jpg", "jpeg", "png"]
+            )
+        ],
+        help_text="Необязательно. Можно загрузить файл и/или указать внешнюю ссылку ниже.",
+    )
+    external_url = models.URLField(
+        "Внешняя ссылка на отчёт", blank=True,
+        help_text="Необязательно. Ссылка на отчёт во внешнем сервисе.",
+    )
+    race = models.ForeignKey(
+        "Race",
+        related_name="reports",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Связанный забег",
+        help_text="Необязательно. Если отчёт относится к конкретному забегу.",
+    )
+    sort_order = models.IntegerField("Порядок сортировки", default=0)
+    is_visible = models.BooleanField("Отображать на сайте", default=True)
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    updated_at = models.DateTimeField("Обновлено", auto_now=True)
+
+    class Meta:
+        verbose_name = "Отчёт"
+        verbose_name_plural = "Отчёты"
+        ordering = ["sort_order", "-date", "-created_at"]
+
+    def __str__(self) -> str:
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = _unique_slug(Report, self.title)
+        super().save(*args, **kwargs)
+
+
+# Карта транслитерации кириллицы в латиницу для человеко-понятных URL (ЧПУ).
+_TRANSLIT_MAP = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "e",
+    "ж": "zh", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m",
+    "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
+    "ф": "f", "х": "h", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "sch",
+    "ъ": "", "ы": "y", "ь": "", "э": "e", "ю": "yu", "я": "ya",
+}
+
+
+def _transliterate(value: str) -> str:
+    """Превращает кириллицу в латиницу, чтобы slug был читаемым (а не пустым)."""
+    result = []
+    for ch in (value or ""):
+        lower = ch.lower()
+        if lower in _TRANSLIT_MAP:
+            translit = _TRANSLIT_MAP[lower]
+            result.append(translit.upper() if ch.isupper() else translit)
+        else:
+            result.append(ch)
+    return "".join(result)
+
+
 def _unique_slug(model_cls, value: str) -> str:
-    """Генерирует уникальный slug на основе значения (с поддержкой кириллицы)."""
-    base = slugify(value, allow_unicode=False) or "item"
+    """Генерирует уникальный человеко-понятный slug (с транслитерацией кириллицы)."""
+    base = slugify(_transliterate(value)) or "item"
     slug = base
     counter = 2
     while model_cls.objects.filter(slug=slug).exists():

@@ -9,7 +9,7 @@ UX-надстройки:
 """
 
 from django.contrib import admin, messages
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.urls import path
 from django.utils.html import format_html
 
@@ -35,6 +35,7 @@ from .models import (
     RaceDistance,
     TeamMember,
     Achievement,
+    Report,
 )
 
 
@@ -148,8 +149,8 @@ class RaceDistanceAdmin(admin.ModelAdmin):
 @admin.register(News)
 class NewsAdmin(SortableAdminMixin, admin.ModelAdmin):
     form = NewsAdminForm
-    list_display = ["__str__", "date", "is_from_vk", "is_visible"]
-    list_filter = ["is_visible", "is_from_vk", "date"]
+    list_display = ["__str__", "date", "is_visible"]
+    list_filter = ["is_visible", "date"]
     search_fields = ["title", "text"]
     list_editable = ["is_visible"]
     date_hierarchy = "date"
@@ -159,17 +160,23 @@ class NewsAdmin(SortableAdminMixin, admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
     change_list_template = "admin/content/news_changelist.html"
     fieldsets = (
-        ("Основное", {
+        ("Новость", {
             "fields": (
-                "title", "slug", "text", "date", "source_url",
+                "title", "text", "date", "source_url",
                 "upload_images", "is_visible",
-            )
+            ),
+            "description": (
+                "Заголовок можно оставить пустым — тогда новость показывается "
+                "как пост. Несколько фото загружаются полем «Загрузить несколько "
+                "фото сразу». Чтобы скрыть новость с сайта — снимите галочку "
+                "«Отображать на сайте»."
+            ),
         }),
-        ("Пометка ВКонтакте (заполняется вручную)", {
+        ("Адрес страницы (заполнится автоматически)", {
             "classes": ("collapse",),
-            "fields": ("is_from_vk", "vk_post_id"),
+            "fields": ("slug",),
         }),
-        ("SEO", {
+        ("SEO (необязательно)", {
             "classes": ("collapse",),
             "fields": ("seo_title", "seo_description", "og_image"),
         }),
@@ -183,32 +190,27 @@ class NewsAdmin(SortableAdminMixin, admin.ModelAdmin):
         urls = super().get_urls()
         return [
             path(
-                "import-vk-json/",
-                self.admin_site.admin_view(self.import_vk_json_view),
-                name="content_news_import_vk_json",
+                "import-vk/",
+                self.admin_site.admin_view(self.import_vk_view),
+                name="content_news_import_vk",
             ),
         ] + urls
 
-    def import_vk_json_view(self, request):
-        from .services.vk_json import import_from_json, VKJsonError
+    def import_vk_view(self, request):
+        """Автоимпорт последних новостей из сообщества ВКонтакте (VK API)."""
+        from .services.vk_api import import_latest_from_vk, VKApiError
 
-        if request.method == "POST":
-            try:
-                created, total = import_from_json(request.POST.get("vk_json", ""))
-                self.message_user(
-                    request,
-                    f"Импорт из JSON ВК: создано новостей — {created} из {total}.",
-                    level=messages.SUCCESS,
-                )
-                return redirect("admin:content_news_changelist")
-            except VKJsonError as exc:
-                self.message_user(request, f"Ошибка: {exc}", level=messages.ERROR)
-        context = {
-            **self.admin_site.each_context(request),
-            "title": "Импорт из JSON ВК",
-            "opts": self.model._meta,
-        }
-        return render(request, "admin/content/import_vk_json.html", context)
+        try:
+            stats = import_latest_from_vk()
+            self.message_user(
+                request,
+                "Загрузка из ВКонтакте: получено {fetched}, добавлено новых "
+                "{created}, обновлено {updated}.".format(**stats),
+                level=messages.SUCCESS,
+            )
+        except VKApiError as exc:
+            self.message_user(request, f"Не удалось загрузить из ВК: {exc}", level=messages.ERROR)
+        return redirect("admin:content_news_changelist")
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
@@ -373,6 +375,35 @@ class AchievementAdmin(SortableAdminMixin, admin.ModelAdmin):
     search_fields = ["value", "label"]
     list_editable = ["is_visible"]
     actions = [make_visible, make_hidden]
+
+
+# --- Отчёты ---
+@admin.register(Report)
+class ReportAdmin(SortableAdminMixin, admin.ModelAdmin):
+    list_display = ["title", "date", "race", "is_visible"]
+    list_filter = ["is_visible", "race", "date"]
+    search_fields = ["title", "description"]
+    list_editable = ["is_visible"]
+    date_hierarchy = "date"
+    actions = [make_visible, make_hidden]
+    readonly_fields = ["created_at", "updated_at"]
+    autocomplete_fields = ["race"]
+    fieldsets = (
+        ("Отчёт", {
+            "fields": (
+                "title", "description", "date",
+                "document", "external_url", "race", "is_visible",
+            ),
+            "description": (
+                "Можно загрузить файл отчёта (PDF и т.п.) и/или указать ссылку "
+                "на внешний отчёт. Не указывайте здесь платёжные реквизиты."
+            ),
+        }),
+        ("Служебное", {
+            "classes": ("collapse",),
+            "fields": ("created_at", "updated_at"),
+        }),
+    )
 
 
 # --- Информация об организации (singleton) ---

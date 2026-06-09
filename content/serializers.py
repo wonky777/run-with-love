@@ -20,6 +20,7 @@ from .models import (
     OrganizationInfo,
     TeamMember,
     Achievement,
+    Report,
 )
 
 
@@ -200,6 +201,30 @@ class AchievementSerializer(serializers.ModelSerializer):
         fields = ["id", "value", "label"]
 
 
+# --- Отчёты ---
+class ReportRaceSerializer(serializers.ModelSerializer):
+    """Краткая инфо о забеге внутри отчёта."""
+
+    class Meta:
+        model = Race
+        fields = ["id", "title"]
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    document = serializers.FileField(use_url=True)
+    race = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Report
+        fields = ["id", "title", "description", "date", "document", "external_url", "race"]
+
+    @extend_schema_field(ReportRaceSerializer)
+    def get_race(self, obj):
+        if obj.race and obj.race.is_visible:
+            return ReportRaceSerializer(obj.race, context=self.context).data
+        return None
+
+
 # === Сериализаторы для записи (POST/PUT/PATCH) ===
 # Используются только для создания/изменения через токен. Чтение отдают
 # сериализаторы выше (с вложенными объектами и абсолютными URL картинок).
@@ -243,6 +268,12 @@ class TeamMemberWriteSerializer(serializers.ModelSerializer):
 class AchievementWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Achievement
+        exclude = ["created_at", "updated_at"]
+
+
+class ReportWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
         exclude = ["created_at", "updated_at"]
 
 

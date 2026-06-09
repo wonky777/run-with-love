@@ -25,6 +25,7 @@ from .models import (
     RaceDistance,
     NewsImage,
     GalleryImage,
+    Report,
 )
 from .serializers import (
     BeneficiarySerializer,
@@ -45,6 +46,8 @@ from .serializers import (
     RaceDistanceCRUDSerializer,
     NewsImageCRUDSerializer,
     GalleryImageCRUDSerializer,
+    ReportSerializer,
+    ReportWriteSerializer,
 )
 
 
@@ -154,6 +157,20 @@ class AchievementViewSet(VisibilityMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self._visible(Achievement.objects.all())
+
+
+@extend_schema_view(
+    list=extend_schema(auth=[]),
+    retrieve=extend_schema(auth=[]),
+)
+class ReportViewSet(VisibilityMixin, viewsets.ModelViewSet):
+    """Отчёты проекта. GET — публично; запись — по токену."""
+
+    read_serializer = ReportSerializer
+    write_serializer = ReportWriteSerializer
+
+    def get_queryset(self):
+        return self._visible(Report.objects.all().select_related("race"))
 
 
 @extend_schema_view(
