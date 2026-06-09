@@ -18,11 +18,11 @@ COPY . .
 # Собираем статику (админка/DRF/Swagger) внутрь образа
 RUN python manage.py collectstatic --noinput
 
+# Стартовый скрипт исполняемый
+RUN chmod +x /app/start.sh
+
 EXPOSE 8000
 
-# При старте: миграции, создание админа (если заданы переменные), запуск gunicorn.
-# --preload грузит приложение в мастере до форка воркеров (быстрее холодный старт),
-# 2 воркера и таймаут 120с снижают шанс 502 на прогреве.
-CMD python manage.py migrate --noinput && \
-    (python manage.py createsuperuser --noinput || true) && \
-    gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 --preload
+# Старт: миграции, опц. суперюзер, затем gunicorn (логи в stdout, exec => PID 1).
+# Скрипт логирует каждый шаг — в Deploy Logs видно, дошли ли до gunicorn и порт.
+CMD ["/app/start.sh"]
