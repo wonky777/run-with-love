@@ -52,13 +52,15 @@ def make_hidden(modeladmin, request, queryset):
     modeladmin.message_user(request, f"Скрыто записей: {updated}.")
 
 
-def image_preview(obj, field_name="image", height=60):
+def image_preview(obj, field_name="image", height=90):
     image = getattr(obj, field_name, None)
     if image:
         return format_html(
-            '<img src="{}" style="height:{}px;border-radius:6px;" />', image.url, height
+            '<img src="{}" style="height:{}px;border-radius:10px;'
+            'box-shadow:0 1px 6px rgba(0,0,0,.15);object-fit:cover;" />',
+            image.url, height,
         )
-    return "—"
+    return format_html('<span style="color:#999;">— нет изображения —</span>')
 
 
 # --- Инлайны (drag-and-drop) ---
@@ -127,10 +129,6 @@ class RaceAdmin(SortableAdminMixin, admin.ModelAdmin):
             "classes": ("collapse",),
             "fields": ("seo_title", "seo_description", "og_image"),
         }),
-        ("Служебное", {
-            "classes": ("collapse",),
-            "fields": ("created_at", "updated_at"),
-        }),
     )
 
     @admin.display(description="Текущая обложка")
@@ -179,10 +177,6 @@ class NewsAdmin(SortableAdminMixin, admin.ModelAdmin):
         ("SEO (необязательно)", {
             "classes": ("collapse",),
             "fields": ("seo_title", "seo_description", "og_image"),
-        }),
-        ("Служебное", {
-            "classes": ("collapse",),
-            "fields": ("created_at", "updated_at"),
         }),
     )
 
@@ -280,10 +274,6 @@ class PartnerAdmin(SortableAdminMixin, admin.ModelAdmin):
             "classes": ("collapse",),
             "fields": ("seo_title", "seo_description", "og_image"),
         }),
-        ("Служебное", {
-            "classes": ("collapse",),
-            "fields": ("created_at", "updated_at"),
-        }),
     )
 
     @admin.display(description="Логотип")
@@ -317,10 +307,6 @@ class BeneficiaryAdmin(SortableAdminMixin, admin.ModelAdmin):
             "classes": ("collapse",),
             "fields": ("seo_title", "seo_description", "og_image"),
         }),
-        ("Служебное", {
-            "classes": ("collapse",),
-            "fields": ("created_at", "updated_at"),
-        }),
     )
 
     @admin.display(description="Лого/фото")
@@ -351,10 +337,6 @@ class GalleryAdmin(SortableAdminMixin, admin.ModelAdmin):
         ("SEO", {
             "classes": ("collapse",),
             "fields": ("seo_title", "seo_description", "og_image"),
-        }),
-        ("Служебное", {
-            "classes": ("collapse",),
-            "fields": ("created_at", "updated_at"),
         }),
     )
 
@@ -425,10 +407,6 @@ class ReportAdmin(SortableAdminMixin, admin.ModelAdmin):
                 "Можно загрузить файл отчёта (PDF и т.п.) и/или указать ссылку "
                 "на внешний отчёт. Не указывайте здесь платёжные реквизиты."
             ),
-        }),
-        ("Служебное", {
-            "classes": ("collapse",),
-            "fields": ("created_at", "updated_at"),
         }),
     )
 

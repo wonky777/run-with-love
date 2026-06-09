@@ -227,11 +227,51 @@ JAZZMIN_SETTINGS = {
         "content.Report": "fas fa-file-lines",
         "content.OrganizationInfo": "fas fa-circle-info",
     },
+    # Иконки сворачивания/разворачивания разделов меню.
+    "default_icon_parents": "fas fa-folder",
+    "default_icon_children": "fas fa-circle",
+    # Ссылки в верхнем меню: открыть сайт и быстрые «Добавить».
+    "topmenu_links": [
+        {"name": "📋 Главная", "url": "admin:index"},
+        {"name": "🌐 Открыть сайт", "url": "/", "new_window": True},
+        {"name": "Добавить забег", "url": "admin:content_race_add"},
+        {"name": "Добавить новость", "url": "admin:content_news_add"},
+    ],
+    # Быстрые действия в боковом меню под разделом «Контент сайта».
+    "custom_links": {
+        "content": [
+            {"name": "➕ Добавить забег", "url": "admin:content_race_add", "icon": "fas fa-person-running"},
+            {"name": "➕ Добавить новость", "url": "admin:content_news_add", "icon": "fas fa-newspaper"},
+            {"name": "➕ Добавить фотоальбом", "url": "admin:content_gallery_add", "icon": "fas fa-images"},
+            {"name": "➕ Добавить отчёт", "url": "admin:content_report_add", "icon": "fas fa-file-lines"},
+        ],
+    },
+    # Связанные объекты редактируются во всплывающем окне (удобнее).
+    "related_modal_active": True,
+    # Меню раскрыто, поиск по разделам — для быстрой навигации.
+    "navigation_expanded": True,
+    # Формы — компактные сворачиваемые блоки вместо длинной простыни.
+    "changeform_format": "collapsible",
+    "changeform_format_overrides": {
+        "content.organizationinfo": "single",
+        "auth.user": "collapsible",
+    },
 }
 JAZZMIN_UI_TWEAKS = {
-    "theme": "flatly",
+    "theme": "litera",          # светлая аккуратная тема
+    "navbar": "navbar-white navbar-light",
+    "sidebar": "sidebar-dark-primary",
+    "accent": "accent-danger",  # фирменный красный акцент проекта
     "navbar_small_text": False,
     "body_small_text": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_flat_style": False,
+    "actions_sticky_top": True,  # кнопки «Сохранить» всегда видны сверху
+    "button_classes": {
+        "primary": "btn-primary",
+        "success": "btn-success",
+        "danger": "btn-danger",
+    },
 }
 
 # --- Редактор текста (CKEditor 5) ---
