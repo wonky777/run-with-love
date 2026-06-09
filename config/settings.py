@@ -227,51 +227,33 @@ JAZZMIN_SETTINGS = {
         "content.Report": "fas fa-file-lines",
         "content.OrganizationInfo": "fas fa-circle-info",
     },
-    # Иконки сворачивания/разворачивания разделов меню.
-    "default_icon_parents": "fas fa-folder",
-    "default_icon_children": "fas fa-circle",
-    # Ссылки в верхнем меню: открыть сайт и быстрые «Добавить».
+    # Одна простая ссылка в верхнем меню — открыть сайт. Без лишнего.
     "topmenu_links": [
-        {"name": "📋 Главная", "url": "admin:index"},
-        {"name": "🌐 Открыть сайт", "url": "/", "new_window": True},
-        {"name": "Добавить забег", "url": "admin:content_race_add"},
-        {"name": "Добавить новость", "url": "admin:content_news_add"},
+        {"name": "Открыть сайт", "url": "/", "new_window": True},
     ],
-    # Быстрые действия в боковом меню под разделом «Контент сайта».
-    "custom_links": {
-        "content": [
-            {"name": "➕ Добавить забег", "url": "admin:content_race_add", "icon": "fas fa-person-running"},
-            {"name": "➕ Добавить новость", "url": "admin:content_news_add", "icon": "fas fa-newspaper"},
-            {"name": "➕ Добавить фотоальбом", "url": "admin:content_gallery_add", "icon": "fas fa-images"},
-            {"name": "➕ Добавить отчёт", "url": "admin:content_report_add", "icon": "fas fa-file-lines"},
-        ],
-    },
-    # Связанные объекты редактируются во всплывающем окне (удобнее).
+    # Меню раскрыто; связанные объекты — во всплывающем окне.
     "related_modal_active": True,
-    # Меню раскрыто, поиск по разделам — для быстрой навигации.
     "navigation_expanded": True,
-    # Формы — компактные сворачиваемые блоки вместо длинной простыни.
-    "changeform_format": "collapsible",
-    "changeform_format_overrides": {
-        "content.organizationinfo": "single",
-        "auth.user": "collapsible",
-    },
+    # Формы — единой простой страницей (всё видно сразу, без вкладок и аккордеонов).
+    "changeform_format": "single",
 }
+# Минималистичная светлая тема: светлый сайдбар, белая шапка, плоский стиль,
+# без ярких акцентов и крупных цветных кнопок.
 JAZZMIN_UI_TWEAKS = {
-    "theme": "litera",          # светлая аккуратная тема
+    "theme": "default",
+    "dark_mode_theme": None,
     "navbar": "navbar-white navbar-light",
-    "sidebar": "sidebar-dark-primary",
-    "accent": "accent-danger",  # фирменный красный акцент проекта
+    "no_navbar_border": True,
+    "navbar_fixed": True,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-light-primary",
+    "sidebar_nav_flat_style": True,
+    "accent": "accent-primary",
+    "brand_colour": False,
     "navbar_small_text": False,
     "body_small_text": False,
-    "sidebar_nav_compact_style": False,
-    "sidebar_nav_flat_style": False,
-    "actions_sticky_top": True,  # кнопки «Сохранить» всегда видны сверху
-    "button_classes": {
-        "primary": "btn-primary",
-        "success": "btn-success",
-        "danger": "btn-danger",
-    },
+    "sidebar_nav_small_text": False,
+    "actions_sticky_top": True,
 }
 
 # --- Редактор текста (CKEditor 5) ---
