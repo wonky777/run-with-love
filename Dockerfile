@@ -21,6 +21,8 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # При старте: миграции, создание админа (если заданы переменные), запуск gunicorn.
+# --preload грузит приложение в мастере до форка воркеров (быстрее холодный старт),
+# 2 воркера и таймаут 120с снижают шанс 502 на прогреве.
 CMD python manage.py migrate --noinput && \
     (python manage.py createsuperuser --noinput || true) && \
-    gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000}
+    gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 --preload
