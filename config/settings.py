@@ -240,7 +240,7 @@ JAZZMIN_SETTINGS = {
 # Минималистичная светлая тема: светлый сайдбар, белая шапка, плоский стиль,
 # без ярких акцентов и крупных цветных кнопок.
 JAZZMIN_UI_TWEAKS = {
-    "theme": "default",
+    "theme": "flatly",          # явная светлая тема (не зависит от тёмного режима браузера)
     "dark_mode_theme": None,
     "navbar": "navbar-white navbar-light",
     "no_navbar_border": True,
@@ -249,7 +249,6 @@ JAZZMIN_UI_TWEAKS = {
     "sidebar": "sidebar-light-primary",
     "sidebar_nav_flat_style": True,
     "accent": "accent-primary",
-    "brand_colour": False,
     "navbar_small_text": False,
     "body_small_text": False,
     "sidebar_nav_small_text": False,
