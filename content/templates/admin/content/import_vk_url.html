@@ -1,0 +1,29 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div style="max-width: 640px;">
+  <p>
+    Вставьте ссылку на пост ВКонтакте — текст, фото и ссылка на оригинал
+    подтянутся автоматически и создастся новость.
+  </p>
+  <p style="color: #b36b00; background: #fff6e5; padding: 10px 14px; border-radius: 6px;">
+    ⏳ <strong>Ожидает токена.</strong> Импорт заработает после того, как в
+    настройках сервера будет задан токен VK (переменная окружения
+    <code>VK_ACCESS_TOKEN</code>). Без него появится сообщение об ошибке, но
+    ничего не сломается.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <p>
+      <label for="post_url"><strong>Ссылка на пост:</strong></label><br>
+      <input type="url" name="post_url" id="post_url" required
+             placeholder="https://vk.com/wall-123456_789"
+             style="width: 100%; padding: 8px; margin-top: 6px;">
+    </p>
+    <div class="submit-row">
+      <input type="submit" value="Импортировать пост" class="default">
+      <a href="{% url 'admin:content_news_changelist' %}" class="button" style="margin-left: 8px;">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,10 +1,16 @@
 {% extends "admin/change_list.html" %}
 {% block object-tools-items %}
   <li>
+    <a href="import-vk-url/" class="addlink" title="Ожидает токена VK">
+      Импортировать пост по ссылке ⏳
+    </a>
+  </li>
+  <li>
     <a href="import-vk/"
        class="addlink"
-       onclick="return confirm('Загрузить последние новости из сообщества ВКонтакте? Существующие записи не дублируются.');">
-      Загрузить новости из ВКонтакте
+       title="Ожидает токена VK"
+       onclick="return confirm('Загрузить последние новости из сообщества ВКонтакте? Существующие записи не дублируются. Требуется токен VK.');">
+      Загрузить новости из ВКонтакте ⏳
     </a>
   </li>
   {{ block.super }}

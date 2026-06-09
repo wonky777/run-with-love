@@ -120,7 +120,10 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# Путь к загруженным файлам можно переопределить через MEDIA_ROOT — чтобы
+# положить media на постоянный Volume (например, на Railway), иначе загруженные
+# фото пропадают при каждом редеплое.
+MEDIA_ROOT = os.getenv("MEDIA_ROOT", str(BASE_DIR / "media"))
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

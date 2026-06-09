@@ -9,7 +9,7 @@ UX-надстройки:
 """
 
 from django.contrib import admin, messages
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.urls import path
 from django.utils.html import format_html
 
@@ -194,6 +194,11 @@ class NewsAdmin(SortableAdminMixin, admin.ModelAdmin):
                 self.admin_site.admin_view(self.import_vk_view),
                 name="content_news_import_vk",
             ),
+            path(
+                "import-vk-url/",
+                self.admin_site.admin_view(self.import_vk_url_view),
+                name="content_news_import_vk_url",
+            ),
         ] + urls
 
     def import_vk_view(self, request):
@@ -211,6 +216,28 @@ class NewsAdmin(SortableAdminMixin, admin.ModelAdmin):
         except VKApiError as exc:
             self.message_user(request, f"Не удалось загрузить из ВК: {exc}", level=messages.ERROR)
         return redirect("admin:content_news_changelist")
+
+    def import_vk_url_view(self, request):
+        """Импорт одного поста ВКонтакте по ссылке (VK API)."""
+        from .services.vk_api import import_single_post_by_url, VKApiError
+
+        if request.method == "POST":
+            url = request.POST.get("post_url", "").strip()
+            try:
+                res = import_single_post_by_url(url)
+                verb = "добавлена" if res["result"] == "created" else "обновлена"
+                self.message_user(
+                    request, f"Новость из ВК {verb}.", level=messages.SUCCESS
+                )
+                return redirect("admin:content_news_changelist")
+            except VKApiError as exc:
+                self.message_user(request, f"Ошибка: {exc}", level=messages.ERROR)
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Импортировать пост по ссылке",
+            "opts": self.model._meta,
+        }
+        return render(request, "admin/content/import_vk_url.html", context)
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)

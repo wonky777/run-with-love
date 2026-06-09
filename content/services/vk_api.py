@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -117,6 +118,52 @@ def _prune_old_vk_news(keep: int = VK_KEEP_LAST) -> int:
     return len(extra_ids)
 
 
+def _upsert_post(post: dict, download_images: bool = True) -> str:
+    """Создаёт или обновляет одну новость из поста VK. Возвращает 'created'/'updated'."""
+    owner_id = post.get("owner_id", "")
+    post_id = post.get("id", "")
+    vk_post_id = f"{owner_id}_{post_id}" if post_id != "" else ""
+    published = post.get("date")
+    post_date = (
+        datetime.fromtimestamp(published, tz=timezone.utc).date()
+        if published
+        else datetime.now(tz=timezone.utc).date()
+    )
+    post_url = f"https://vk.com/wall{vk_post_id}" if vk_post_id else ""
+
+    defaults = {
+        "text": (post.get("text") or "").strip(),
+        "date": post_date,
+        "source_url": post_url,
+    }
+
+    if vk_post_id:
+        news, is_new = News.objects.get_or_create(
+            vk_post_id=vk_post_id,
+            is_from_vk=True,
+            defaults={**defaults, "is_visible": True},
+        )
+        if not is_new:
+            # Обновляем текст/дату/ссылку, не трогая is_visible (могли скрыть руками).
+            for field, value in defaults.items():
+                setattr(news, field, value)
+            news.save(update_fields=list(defaults.keys()) + ["updated_at"])
+            return "updated"
+    else:
+        news = News.objects.create(is_from_vk=True, is_visible=True, **defaults)
+
+    if download_images:
+        order = 0
+        for att in post.get("attachments") or []:
+            if att.get("type") != "photo":
+                continue
+            url = _best_photo_url(att)
+            if url:
+                order += 1
+                _download_image(news, url, order)
+    return "created"
+
+
 def import_latest_from_vk(count: int = VK_KEEP_LAST, download_images: bool = True) -> dict:
     """
     Импортирует последние посты сообщества VK в News.
@@ -127,52 +174,11 @@ def import_latest_from_vk(count: int = VK_KEEP_LAST, download_images: bool = Tru
     items = _call_wall_get(count)
     created = 0
     updated = 0
-
     for post in items:
-        owner_id = post.get("owner_id", "")
-        post_id = post.get("id", "")
-        vk_post_id = f"{owner_id}_{post_id}" if post_id != "" else ""
-        published = post.get("date")
-        post_date = (
-            datetime.fromtimestamp(published, tz=timezone.utc).date()
-            if published
-            else datetime.now(tz=timezone.utc).date()
-        )
-        post_url = f"https://vk.com/wall{vk_post_id}" if vk_post_id else ""
-
-        defaults = {
-            "text": (post.get("text") or "").strip(),
-            "date": post_date,
-            "source_url": post_url,
-        }
-
-        if vk_post_id:
-            news, is_new = News.objects.get_or_create(
-                vk_post_id=vk_post_id,
-                is_from_vk=True,
-                defaults={**defaults, "is_visible": True},
-            )
-            if not is_new:
-                # Обновляем текст/дату/ссылку, не трогая is_visible (могли скрыть руками).
-                for field, value in defaults.items():
-                    setattr(news, field, value)
-                news.save(update_fields=list(defaults.keys()) + ["updated_at"])
-                updated += 1
-                continue
+        if _upsert_post(post, download_images) == "created":
+            created += 1
         else:
-            news = News.objects.create(is_from_vk=True, is_visible=True, **defaults)
-            is_new = True
-
-        created += 1
-        if download_images:
-            order = 0
-            for att in post.get("attachments") or []:
-                if att.get("type") != "photo":
-                    continue
-                url = _best_photo_url(att)
-                if url:
-                    order += 1
-                    _download_image(news, url, order)
+            updated += 1
 
     pruned = _prune_old_vk_news()
     return {
@@ -181,3 +187,58 @@ def import_latest_from_vk(count: int = VK_KEEP_LAST, download_images: bool = Tru
         "updated": updated,
         "pruned": pruned,
     }
+
+
+def _parse_post_url(url: str) -> str:
+    """
+    Извлекает идентификатор поста VK из ссылки.
+    Поддерживает: vk.com/wall-123_456, vk.com/runwithlove?w=wall-123_456 и т.п.
+    Возвращает строку вида "-123_456".
+    """
+    if not url:
+        raise VKApiError("Пустая ссылка на пост.")
+    m = re.search(r"wall(-?\d+_\d+)", url)
+    if not m:
+        raise VKApiError(
+            "Не удалось распознать ссылку на пост. Пример правильной ссылки: "
+            "https://vk.com/wall-123456_789"
+        )
+    return m.group(1)
+
+
+def _call_wall_get_by_id(post_id: str) -> dict:
+    """Получает один пост через VK API wall.getById."""
+    params = {
+        "posts": post_id,
+        "access_token": _get_token(),
+        "v": VK_API_VERSION,
+    }
+    url = f"https://api.vk.com/method/wall.getById?{urllib.parse.urlencode(params)}"
+    try:
+        with urllib.request.urlopen(url, timeout=30) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:
+        raise VKApiError(f"Не удалось получить пост из VK API: {exc}")
+
+    if "error" in payload:
+        raise VKApiError(
+            f"VK API вернул ошибку: {payload['error'].get('error_msg', 'неизвестно')}"
+        )
+
+    response = payload.get("response")
+    # Новый формат: {"items": [...]}; старый: [...] .
+    items = response.get("items") if isinstance(response, dict) else response
+    if not items:
+        raise VKApiError("Пост не найден или недоступен.")
+    return items[0]
+
+
+def import_single_post_by_url(url: str, download_images: bool = True) -> dict:
+    """
+    Импортирует один пост ВКонтакте по ссылке.
+    Возвращает {"result": "created"|"updated"}.
+    """
+    post_id = _parse_post_url(url)
+    post = _call_wall_get_by_id(post_id)
+    result = _upsert_post(post, download_images)
+    return {"result": result}
